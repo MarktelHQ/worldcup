@@ -25,7 +25,7 @@ export default function Shell({
   const [live, setLive] = useState<{ have: number; spares: number } | null>(null);
   useEffect(() => {
     let alive = true;
-    fetch(`/api/collection/${encodeURIComponent(username)}`)
+    fetch(`/api/collection/${encodeURIComponent(username)}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (!alive || !d || !d.holdings) return;

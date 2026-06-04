@@ -12,7 +12,7 @@ export default function TradeClient({ username, allIds }: { username: string; al
   // Pull fresh holdings when the screen opens — never trust a cached render.
   useEffect(() => {
     let alive = true;
-    fetch(`/api/collection/${encodeURIComponent(username)}`)
+    fetch(`/api/collection/${encodeURIComponent(username)}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (!alive || !d || !d.holdings) return;

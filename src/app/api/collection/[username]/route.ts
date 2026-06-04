@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_req: Request, { params }: { params: { username: string } }) {
   const db = supabaseAdmin();
   const { data: profile } = await db

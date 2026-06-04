@@ -25,7 +25,7 @@ export default function CollectionClient({
   const touched = useRef(false);
   useEffect(() => {
     let alive = true;
-    fetch(`/api/collection/${encodeURIComponent(username)}`)
+    fetch(`/api/collection/${encodeURIComponent(username)}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => { if (alive && !touched.current && d && d.holdings) setHoldings(d.holdings); })
       .catch(() => {});
