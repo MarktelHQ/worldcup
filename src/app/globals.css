@@ -91,8 +91,8 @@ nav.tabs a .badge{position:absolute;top:5px;right:8px;background:var(--vermilion
 .mtile.pressing{animation:stick .3s cubic-bezier(.3,.7,.3,1.4);}
 .mtile .sp{position:absolute;top:-8px;right:-8px;background:var(--vermilion);color:#fff;border:2px solid var(--ink);font-family:"Martian Mono",monospace;font-weight:600;font-size:10px;padding:1px 5px;border-radius:99px;box-shadow:2px 2px 0 var(--ink);z-index:3;}
 .mtile.crest .mnum,.mtile.photo .mnum{color:var(--cobalt);}
-.mtile.shiny{overflow:hidden;}
-.mtile.shiny .foil{position:absolute;inset:0;z-index:0;background:linear-gradient(118deg,#ff7ab0,#ffd24c,#7affc6,#7ab0ff,#cf7aff,#ff7ab0);background-size:320% 320%;animation:foil 5.5s ease-in-out infinite;}
+.mtile.shiny .foil{border-radius:var(--r);}
+.mtile.shiny .foil{position:absolute;inset:0;z-index:0;border-radius:var(--r);background:linear-gradient(118deg,#ff7ab0,#ffd24c,#7affc6,#7ab0ff,#cf7aff,#ff7ab0);background-size:320% 320%;animation:foil 5.5s ease-in-out infinite;}
 @keyframes foil{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .mtile.shiny>*{position:relative;z-index:1;}
 .step{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;border-top:1px solid rgba(22,17,11,.22);padding-top:6px;position:relative;z-index:1;visibility:hidden;}

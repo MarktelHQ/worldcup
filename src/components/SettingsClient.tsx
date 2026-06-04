@@ -12,6 +12,7 @@ export default function SettingsClient({ username, have, total, spares, inviteCo
 
   useEffect(() => { setToken(localStorage.getItem(`swap:token:${username}`)); setOrigin(window.location.origin); }, [username]);
   const editLink = token ? `${origin}/u/${username}#token=${token}` : "";
+  const joinLink = inviteCode && origin ? `${origin}/?join=${inviteCode}` : "";
 
   async function exportBackup() {
     if (!token) return flash(t("set.notOwner"));
@@ -65,10 +66,16 @@ export default function SettingsClient({ username, have, total, spares, inviteCo
           <h2>{t("set.groupCode")}</h2>
           <p className="muted">{t("set.groupCodeHelp")}</p>
           <p style={{ fontFamily: "'Big Shoulders Display'", fontWeight: 900, fontSize: 30, letterSpacing: ".04em", color: "var(--vermilion)", margin: "6px 0" }}>{inviteCode}</p>
-          <button className="btn" style={{ background: "var(--panel)", color: "var(--ink)" }}
-            onClick={() => { navigator.clipboard?.writeText(inviteCode); flash(t("set.linkCopied")); }}>
-            {t("set.copyLink")}
-          </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button className="btn" style={{ width: "auto" }}
+              onClick={() => { navigator.clipboard?.writeText(joinLink); flash(t("set.linkCopied")); }}>
+              {t("set.joinLink")}
+            </button>
+            <button className="btn" style={{ width: "auto", background: "var(--panel)", color: "var(--ink)" }}
+              onClick={() => { navigator.clipboard?.writeText(inviteCode); flash(t("set.linkCopied")); }}>
+              {t("set.codeCopy")}
+            </button>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n, LangSwitch } from "@/components/Providers";
 
@@ -13,6 +13,11 @@ export default function Home() {
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const j = new URLSearchParams(window.location.search).get("join");
+    if (j) { setInvite(j); setTab("join"); }
+  }, []);
 
   async function join() {
     setErr(null); setBusy(true);

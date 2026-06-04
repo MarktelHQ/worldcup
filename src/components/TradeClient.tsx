@@ -11,7 +11,6 @@ export default function TradeClient({ username, spares, needs }: { username: str
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 1800); };
   const copy = (text: string, msg: string) => { navigator.clipboard?.writeText(text); flash(msg); };
-  const qr = origin ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(link)}` : "";
 
   return (
     <>
@@ -21,7 +20,6 @@ export default function TradeClient({ username, spares, needs }: { username: str
       <div className="stamps">
         <div className="stamp" onClick={() => copy(link, t("trade.copied"))}>↗ {t("trade.copyLink")}</div>
         <div className="stamp" onClick={() => window.print()}>⎙ {t("trade.pdf")}</div>
-        {qr && <img className="qr" src={qr} alt={t("trade.qr")} width={64} height={64} title={t("trade.qr")} />}
       </div>
       <hr className="perf" />
 
