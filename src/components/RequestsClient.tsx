@@ -29,10 +29,6 @@ export default function RequestsClient({ username }: { username: string }) {
     });
     flash(okMsg); load();
   }
-  function reply(r: Req) {
-    const msg = `@${r.with} — about our swap: you get ${r.offered.join(", ")}; I get ${r.wanted.join(", ")}. 👍`;
-    navigator.clipboard?.writeText(msg); flash(t("trade.copied"));
-  }
   const statusLabel = (s: string) => t(`req.status${s.charAt(0).toUpperCase() + s.slice(1)}`);
   const statusCls = (s: string) => (s === "open" ? "new" : s === "accepted" ? "agreed" : s === "done" ? "agreed" : "pending");
 
@@ -59,7 +55,6 @@ export default function RequestsClient({ username }: { username: string }) {
               <button className="btn sm ghost" onClick={() => respond(r.id, "decline", t("req.declined"))}>{t("req.decline")}</button>
             </>}
             {r.status === "accepted" && <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>}
-            <span className="copybar" onClick={() => reply(r)}>⧉ {t("req.reply")}</span>
           </div>
         </div>
       ))}

@@ -29,10 +29,6 @@ export default function MarketClient({ username }: { username: string }) {
     setSent((s) => ({ ...s, [m.username]: true }));
     flash(t("market.requested", { who: "@" + m.username }));
   }
-  function draft(m: Member) {
-    const msg = `@${m.username} — you need ${m.youGive.slice(0, 8).join(", ")}${m.youGive.length > 8 ? "…" : ""}; I've got them spare. I need ${m.theyGive.slice(0, 8).join(", ")}${m.theyGive.length > 8 ? "…" : ""}. Swap?`;
-    navigator.clipboard?.writeText(msg); flash(t("trade.copied"));
-  }
 
   return (
     <>
@@ -69,7 +65,6 @@ export default function MarketClient({ username }: { username: string }) {
             <button className="btn" disabled={sent[m.username] || m.youGive.length + m.theyGive.length === 0} onClick={() => request(m)}>
               {sent[m.username] ? "✓" : t("market.request")}
             </button>
-            <span className="copybar" onClick={() => draft(m)}>⧉ {t("market.draft")}</span>
           </div>
         </div>
       ))}
