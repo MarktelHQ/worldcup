@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/components/Providers";
 
-export default function SettingsClient({ username, have, total, spares }: { username: string; have: number; total: number; spares: number }) {
+export default function SettingsClient({ username, have, total, spares, inviteCode }: { username: string; have: number; total: number; spares: number; inviteCode: string }) {
   const { t } = useI18n();
   const [token, setToken] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
@@ -59,6 +59,18 @@ export default function SettingsClient({ username, have, total, spares }: { user
           {t("set.copyLink")}
         </button>
       </div>
+
+      {inviteCode && (
+        <div className="card">
+          <h2>{t("set.groupCode")}</h2>
+          <p className="muted">{t("set.groupCodeHelp")}</p>
+          <p style={{ fontFamily: "'Big Shoulders Display'", fontWeight: 900, fontSize: 30, letterSpacing: ".04em", color: "var(--vermilion)", margin: "6px 0" }}>{inviteCode}</p>
+          <button className="btn" style={{ background: "var(--panel)", color: "var(--ink)" }}
+            onClick={() => { navigator.clipboard?.writeText(inviteCode); flash(t("set.linkCopied")); }}>
+            {t("set.copyLink")}
+          </button>
+        </div>
+      )}
 
       <div className="card">
         <h2>{t("set.backup")}</h2>

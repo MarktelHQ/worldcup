@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Section, Holdings } from "@/lib/types";
 import { useI18n } from "@/components/Providers";
 import { COUNTRY_DE } from "@/lib/i18n";
@@ -10,6 +11,8 @@ export default function CollectionClient({
   username, sections, initialHoldings,
 }: { username: string; sections: Section[]; initialHoldings: Holdings }) {
   const { t, locale } = useI18n();
+  const router = useRouter();
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [holdings, setHoldings] = useState<Holdings>(initialHoldings);
   const [open, setOpen] = useState<string | null>(sections[0]?.code ?? null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -41,6 +44,8 @@ export default function CollectionClient({
     setHoldings((h) => { const n = { ...h }; if (count <= 0) delete n[id]; else n[id] = count; return n; });
     if (animate) { setPressing(id); setTimeout(() => setPressing((p) => (p === id ? null : p)), 320); }
     persist(id, Math.max(0, count));
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => router.refresh(), 700);
   }
   const toggle = (id: string) => { const c = holdings[id] || 0; c >= 1 ? setCount(id, 0) : setCount(id, 1, true); };
   const addSpare = (id: string) => setCount(id, (holdings[id] || 0) >= 1 ? (holdings[id] || 0) + 1 : 1, (holdings[id] || 0) < 1);
@@ -112,13 +117,10 @@ export default function CollectionClient({
                           <div className="mnum">{s.num_in_section}</div>
                           {spares > 0 && <span className="sp">&times;{spares}</span>}
                           <div className="mname">{s.label}</div>
-                          <div className="step" onClick={(e) => e.stopPropagation()}>
-                            <span className="lab">{t("col.sparesLabel")}</span>
-                            <span className="ctrls">
-                              <button className="minus" onClick={() => subSpare(s.id)}>&minus;</button>
-                              <span className="cnt">{spares}</span>
-                              <button className="plus" onClick={() => addSpare(s.id)}>+</button>
-                            </span>
+                          <div className="step" onClick={(e) => e.stopPropagation()} title={t("col.sparesLabel")}>
+                            <button className="minus" onClick={() => subSpare(s.id)} aria-label="one fewer spare">&minus;</button>
+                            <span className="cnt">{spares}</span>
+                            <button className="plus" onClick={() => addSpare(s.id)} aria-label="one more spare">+</button>
                           </div>
                         </div>
                       );
