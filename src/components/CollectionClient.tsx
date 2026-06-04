@@ -19,6 +19,19 @@ export default function CollectionClient({
   useEffect(() => { setToken(localStorage.getItem(`swap:token:${username}`)); }, [username]);
   const isOwner = !!token;
 
+  // Re-seed from the database every time this screen opens, so switching tabs
+  // never shows a stale cached snapshot. Skip once the user starts editing so
+  // we don't clobber their optimistic taps.
+  const touched = useRef(false);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/collection/${encodeURIComponent(username)}`)
+      .then((r) => r.json())
+      .then((d) => { if (alive && !touched.current && d && d.holdings) setHoldings(d.holdings); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [username]);
+
   const { setStats } = useStats();
   useEffect(() => {
     let have = 0, sp = 0, total = 0;
@@ -49,6 +62,7 @@ export default function CollectionClient({
   }
   function setCount(id: string, count: number, animate = false) {
     if (!isOwner) return;
+    touched.current = true;
     setHoldings((h) => { const n = { ...h }; if (count <= 0) delete n[id]; else n[id] = count; return n; });
     if (animate) { setPressing(id); setTimeout(() => setPressing((p) => (p === id ? null : p)), 320); }
     persist(id, Math.max(0, count));

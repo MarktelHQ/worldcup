@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n, LangSwitch, useStats } from "@/components/Providers";
@@ -19,8 +20,23 @@ export default function Shell({
   const path = usePathname();
   const { t } = useI18n();
   const { stats } = useStats();
-  const liveHave = stats?.have ?? have;
-  const liveSpares = stats?.spares ?? spares;
+  // Fallback fresh pull for the top bar on every screen (so the counter is
+  // correct on each tab even when the page render itself was cached).
+  const [live, setLive] = useState<{ have: number; spares: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/collection/${encodeURIComponent(username)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !d || !d.holdings) return;
+        const vals = Object.values(d.holdings) as number[];
+        setLive({ have: vals.length, spares: vals.reduce((n, c) => n + (c >= 2 ? c - 1 : 0), 0) });
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [username]);
+  const liveHave = stats?.have ?? live?.have ?? have;
+  const liveSpares = stats?.spares ?? live?.spares ?? spares;
   const liveTotal = stats?.total ?? total;
   const base = `/u/${username}`;
   const pct = liveTotal ? Math.round((liveHave / liveTotal) * 100) : 0;

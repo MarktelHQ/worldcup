@@ -2,11 +2,28 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/components/Providers";
 
-export default function TradeClient({ username, spares, needs }: { username: string; spares: string[]; needs: string[] }) {
+export default function TradeClient({ username, allIds }: { username: string; allIds: string[] }) {
   const { t } = useI18n();
   const [origin, setOrigin] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const [spares, setSpares] = useState<string[]>([]);
+  const [needs, setNeeds] = useState<string[]>([]);
   useEffect(() => setOrigin(window.location.origin), []);
+  // Pull fresh holdings when the screen opens — never trust a cached render.
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/collection/${encodeURIComponent(username)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !d || !d.holdings) return;
+        const h = d.holdings as Record<string, number>;
+        const held = new Set(Object.keys(h));
+        setSpares(Object.entries(h).filter(([, c]) => c >= 2).map(([id]) => id).sort());
+        setNeeds(allIds.filter((id) => !held.has(id)).sort());
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [username, allIds]);
   const link = `${origin}/u/${username}`;
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 1800); };
