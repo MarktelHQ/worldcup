@@ -19,5 +19,11 @@ export async function GET(_req: Request, { params }: { params: { username: strin
   return NextResponse.json({
     profile: { username: profile.username, group_id: profile.group_id, updated_at: profile.updated_at },
     holdings: map,
+  }, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0, must-revalidate",
+      "CDN-Cache-Control": "no-store",
+      "Vercel-CDN-Cache-Control": "no-store",
+    },
   });
 }
