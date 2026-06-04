@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Section, Holdings } from "@/lib/types";
 import { useI18n, useStats } from "@/components/Providers";
 import { COUNTRY_DE } from "@/lib/i18n";
@@ -22,27 +22,30 @@ export default function CollectionClient({
   const { setStats } = useStats();
   useEffect(() => {
     let have = 0, sp = 0, total = 0;
-    sections.forEach((sec) => sec.stickers.forEach((s) => { total++; const c = holdings[s.id] || 0; if (c >= 1) have++; if (c >= 2) sp++; }));
+    sections.forEach((sec) => sec.stickers.forEach((s) => { total++; const c = holdings[s.id] || 0; if (c >= 1) have++; if (c >= 2) sp += c - 1; }));
     setStats({ have, spares: sp, total });
   }, [holdings, sections, setStats]);
   useEffect(() => () => setStats(null), [setStats]);
   const secName = (s: Section) => (locale === "de" ? COUNTRY_DE[s.code] ?? s.name : s.name);
 
   const stat = (sec: Section) => {
-    let have = 0, sp = 0;
-    for (const s of sec.stickers) { const c = holdings[s.id] || 0; if (c >= 1) have++; if (c >= 2) sp++; }
-    return { have, sp, total: sec.stickers.length, done: have === sec.stickers.length };
+    let have = 0, spDistinct = 0, spCopies = 0;
+    for (const s of sec.stickers) { const c = holdings[s.id] || 0; if (c >= 1) have++; if (c >= 2) { spDistinct++; spCopies += c - 1; } }
+    return { have, spDistinct, spCopies, total: sec.stickers.length, done: have === sec.stickers.length };
   };
 
-  async function persist(sticker_id: string, count: number) {
-    if (!isOwner) return;
-    try {
-      await fetch("/api/holding", {
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  function persist(sticker_id: string, count: number) {
+    if (!isOwner || !token) return;
+    const body = JSON.stringify({ username, sticker_id, count });
+    // serialize writes so the last value always wins (prevents the got/double race)
+    queue.current = queue.current.then(() =>
+      fetch("/api/holding", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-owner-token": token! },
-        body: JSON.stringify({ username, sticker_id, count }),
-      });
-    } catch {}
+        headers: { "Content-Type": "application/json", "x-owner-token": token },
+        body,
+      }).catch(() => {})
+    );
   }
   function setCount(id: string, count: number, animate = false) {
     if (!isOwner) return;
@@ -55,10 +58,10 @@ export default function CollectionClient({
   const subSpare = (id: string) => setCount(id, Math.max(1, (holdings[id] || 1) - 1));
 
   const visible = (sec: Section) => {
-    const { done, sp } = stat(sec);
+    const { done, spDistinct } = stat(sec);
     if (filter === "todo") return !done;
     if (filter === "done") return done;
-    if (filter === "spares") return sp > 0;
+    if (filter === "spares") return spDistinct > 0;
     if (filter === "spec") return sec.isSpecial;
     return true;
   };
@@ -86,9 +89,9 @@ export default function CollectionClient({
       <div className="list">
         {sections.map((sec, idx) => {
           if (!visible(sec)) return null;
-          const { have, sp, total, done } = stat(sec);
+          const { have, spDistinct, spCopies, total, done } = stat(sec);
           const isOpen = open === sec.code;
-          const ticks = Array.from({ length: total }, (_, i) => (i < sp ? "d" : i < have ? "h" : ""));
+          const ticks = Array.from({ length: total }, (_, i) => (i < spDistinct ? "d" : i < have ? "h" : ""));
           return (
             <div key={sec.code}
               className={`sec${done ? " done" : ""}${have === 0 ? " empty" : ""}${sec.isSpecial ? " spec" : ""}${isOpen ? " open" : ""}`}>
@@ -97,7 +100,7 @@ export default function CollectionClient({
                 <span className="fstamp">{sec.code}</span>
                 <span className="sname">{secName(sec)}</span>
                 <span className="mini">{ticks.map((tk, i) => <i key={i} className={tk} />)}</span>
-                {sp > 0 && <span className="spare-pill">+{sp}</span>}
+                {spCopies > 0 && <span className="spare-pill">+{spCopies}</span>}
                 <span className="scount">{have}/{total}</span>
                 <span className="chev">&#8250;</span>
               </div>

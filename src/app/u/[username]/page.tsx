@@ -31,7 +31,7 @@ export default async function CollectionPage({ params }: { params: { username: s
   }
 
   const have = Object.values(holdings).filter((c) => c >= 1).length;
-  const spares = Object.values(holdings).filter((c) => c >= 2).length;
+  const spares = Object.values(holdings).reduce((n, c) => n + (c >= 2 ? c - 1 : 0), 0);
 
   if (!profile) {
     return (

@@ -9,7 +9,8 @@ export async function POST(req: Request) {
   if (!clean) return NextResponse.json({ error: "invalid username" }, { status: 400 });
 
   const db = supabaseAdmin();
-  const { data: group } = await db.from("groups").select("id").eq("invite_code", invite_code).single();
+  const code = String(invite_code).trim().toUpperCase().replace(/\s+/g, "");
+  const { data: group } = await db.from("groups").select("id").eq("invite_code", code).single();
   if (!group) return NextResponse.json({ error: "unknown invite code" }, { status: 404 });
 
   const owner_token = newOwnerToken();

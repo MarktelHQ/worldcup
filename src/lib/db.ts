@@ -31,7 +31,7 @@ export async function headerStats(username: string) {
   if (!me) return { exists: false, have: 0, total: total ?? 0, spares: 0, badge: 0 };
   const { data: hs } = await db.from("holdings").select("count").eq("profile_id", me.id);
   const have = (hs ?? []).filter((h) => h.count >= 1).length;
-  const spares = (hs ?? []).filter((h) => h.count >= 2).length;
+  const spares = (hs ?? []).reduce((n, h) => n + (h.count >= 2 ? h.count - 1 : 0), 0);
   const { count: badge } = await db
     .from("requests").select("*", { count: "exact", head: true })
     .eq("to_profile", me.id).eq("status", "open");
