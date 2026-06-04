@@ -50,17 +50,6 @@ export default function SettingsClient({ username, have, total, spares, inviteCo
     <>
       <div className="sheet-title">{t("set.title")}</div>
 
-      <div className="card">
-        <h2>{t("set.profile")}</h2>
-        <p className="muted">{t("set.username")}: <b>@{username}</b></p>
-        <p className="muted" style={{ marginTop: 12 }}>{t("set.editLink")}</p>
-        <p className="muted" style={{ fontSize: 10, wordBreak: "break-all", color: "var(--cobalt)" }}>{editLink || "—"}</p>
-        <p className="muted">{t("set.editLinkHelp")}</p>
-        <button className="btn" style={{ marginTop: 8 }} onClick={() => { if (editLink) { navigator.clipboard?.writeText(editLink); flash(t("set.linkCopied")); } else flash(t("set.notOwner")); }}>
-          {t("set.copyLink")}
-        </button>
-      </div>
-
       {inviteCode && (
         <div className="card">
           <h2>{t("set.groupCode")}</h2>
@@ -78,6 +67,17 @@ export default function SettingsClient({ username, have, total, spares, inviteCo
           </div>
         </div>
       )}
+
+      <div className="card">
+        <h2>{t("set.profile")}</h2>
+        <p className="muted">{t("set.username")}: <b>@{username}</b></p>
+        <p className="muted" style={{ marginTop: 12 }}>{t("set.editLink")}</p>
+        <p className="muted" style={{ fontSize: 10, wordBreak: "break-all", color: "var(--cobalt)" }}>{editLink || "—"}</p>
+        <p className="muted">{t("set.editLinkHelp")}</p>
+        <button className="btn" style={{ marginTop: 8 }} onClick={() => { if (editLink) { navigator.clipboard?.writeText(editLink); flash(t("set.linkCopied")); } else flash(t("set.notOwner")); }}>
+          {t("set.copyLink")}
+        </button>
+      </div>
 
       <div className="card">
         <h2>{t("set.backup")}</h2>

@@ -6,8 +6,13 @@ type Ctx = { locale: Locale; setLocale: (l: Locale) => void; t: (k: string, v?: 
 const I18nCtx = createContext<Ctx>({ locale: "en", setLocale: () => {}, t: (k) => k });
 export const useI18n = () => useContext(I18nCtx);
 
+type Stats = { have: number; spares: number; total: number } | null;
+const StatsCtx = createContext<{ stats: Stats; setStats: (s: Stats) => void }>({ stats: null, setStats: () => {} });
+export const useStats = () => useContext(StatsCtx);
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en");
+  const [stats, setStats] = useState<Stats>(null);
 
   useEffect(() => {
     // 1) language: saved choice, else browser default
@@ -33,7 +38,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   };
   const t = (k: string, v?: Record<string, string | number>) => tr(locale, k, v);
 
-  return <I18nCtx.Provider value={{ locale, setLocale, t }}>{children}</I18nCtx.Provider>;
+  return (
+    <I18nCtx.Provider value={{ locale, setLocale, t }}>
+      <StatsCtx.Provider value={{ stats, setStats }}>{children}</StatsCtx.Provider>
+    </I18nCtx.Provider>
+  );
 }
 
 export function LangSwitch() {

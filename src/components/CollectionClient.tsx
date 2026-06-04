@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { Section, Holdings } from "@/lib/types";
-import { useI18n } from "@/components/Providers";
+import { useI18n, useStats } from "@/components/Providers";
 import { COUNTRY_DE } from "@/lib/i18n";
 
 type Filter = "all" | "todo" | "spares" | "done" | "spec";
@@ -11,8 +10,6 @@ export default function CollectionClient({
   username, sections, initialHoldings,
 }: { username: string; sections: Section[]; initialHoldings: Holdings }) {
   const { t, locale } = useI18n();
-  const router = useRouter();
-  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [holdings, setHoldings] = useState<Holdings>(initialHoldings);
   const [open, setOpen] = useState<string | null>(sections[0]?.code ?? null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -21,6 +18,14 @@ export default function CollectionClient({
 
   useEffect(() => { setToken(localStorage.getItem(`swap:token:${username}`)); }, [username]);
   const isOwner = !!token;
+
+  const { setStats } = useStats();
+  useEffect(() => {
+    let have = 0, sp = 0, total = 0;
+    sections.forEach((sec) => sec.stickers.forEach((s) => { total++; const c = holdings[s.id] || 0; if (c >= 1) have++; if (c >= 2) sp++; }));
+    setStats({ have, spares: sp, total });
+  }, [holdings, sections, setStats]);
+  useEffect(() => () => setStats(null), [setStats]);
   const secName = (s: Section) => (locale === "de" ? COUNTRY_DE[s.code] ?? s.name : s.name);
 
   const stat = (sec: Section) => {
@@ -44,8 +49,6 @@ export default function CollectionClient({
     setHoldings((h) => { const n = { ...h }; if (count <= 0) delete n[id]; else n[id] = count; return n; });
     if (animate) { setPressing(id); setTimeout(() => setPressing((p) => (p === id ? null : p)), 320); }
     persist(id, Math.max(0, count));
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
-    refreshTimer.current = setTimeout(() => router.refresh(), 700);
   }
   const toggle = (id: string) => { const c = holdings[id] || 0; c >= 1 ? setCount(id, 0) : setCount(id, 1, true); };
   const addSpare = (id: string) => setCount(id, (holdings[id] || 0) >= 1 ? (holdings[id] || 0) + 1 : 1, (holdings[id] || 0) < 1);

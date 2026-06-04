@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useI18n, LangSwitch } from "@/components/Providers";
+import { useI18n, LangSwitch, useStats } from "@/components/Providers";
 
 const TABS = [
   { slug: "", key: "collection" },
@@ -18,8 +18,12 @@ export default function Shell({
 }) {
   const path = usePathname();
   const { t } = useI18n();
+  const { stats } = useStats();
+  const liveHave = stats?.have ?? have;
+  const liveSpares = stats?.spares ?? spares;
+  const liveTotal = stats?.total ?? total;
   const base = `/u/${username}`;
-  const pct = total ? Math.round((have / total) * 100) : 0;
+  const pct = liveTotal ? Math.round((liveHave / liveTotal) * 100) : 0;
   return (
     <div className="wrap">
       <header className="masthead">
@@ -37,13 +41,13 @@ export default function Shell({
       </header>
 
       <div className="ticker">
-        <div className="big-figure"><i>{have}</i><small>/{total}</small></div>
+        <div className="big-figure"><i>{liveHave}</i><small>/{liveTotal}</small></div>
         <div className="meter">
           <div className="meter-bar"><div className="meter-fill" style={{ width: `${pct}%` }} /></div>
           <div className="meter-tags">
             <span>{pct}% {t("ticker.complete")}</span>
-            <span>{spares} {t("ticker.spares")}</span>
-            <span>{total - have} {t("ticker.needed")}</span>
+            <span>{liveSpares} {t("ticker.spares")}</span>
+            <span>{liveTotal - liveHave} {t("ticker.needed")}</span>
           </div>
         </div>
       </div>
