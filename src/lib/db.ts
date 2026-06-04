@@ -17,6 +17,22 @@ export async function getProfile(username: string): Promise<ProfileRow | null> {
   return (data as ProfileRow) ?? null;
 }
 
+// Resolve a profile by its owner token. The token is the secret edit key and is
+// unique to ONE profile, so this is unambiguous even if two profiles share a
+// username across groups — it is the identity an owner actually holds. Used for
+// every write and for an owner viewing their own list.
+export async function getProfileByToken(token: string): Promise<ProfileRow | null> {
+  if (!token) return null;
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("profiles")
+    .select("id, group_id, username, owner_token, updated_at")
+    .eq("owner_token", token)
+    .limit(1)
+    .maybeSingle();
+  return (data as ProfileRow) ?? null;
+}
+
 // holdings map for a profile: sticker_id -> { count, reserved }
 export async function holdingsFor(profileId: string) {
   const db = supabaseAdmin();

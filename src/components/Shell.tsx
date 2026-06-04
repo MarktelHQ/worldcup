@@ -35,8 +35,10 @@ export default function Shell({
       .catch(() => {});
     return () => { alive = false; };
   }, [username]);
-  const liveHave = stats?.have ?? live?.have ?? have;
-  const liveSpares = stats?.spares ?? live?.spares ?? spares;
+  // Prefer optimistic in-screen stats, then a live fetch, then the server value.
+  // `|| have` (not `??`) so a transient empty read can never zero a known count.
+  const liveHave = stats?.have ?? (live?.have || have);
+  const liveSpares = stats?.spares ?? (live?.spares ?? spares);
   const liveTotal = stats?.total ?? total;
   const base = `/u/${username}`;
   const pct = liveTotal ? Math.round((liveHave / liveTotal) * 100) : 0;

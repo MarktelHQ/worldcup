@@ -15,6 +15,7 @@ export default function CollectionClient({
   const [filter, setFilter] = useState<Filter>("all");
   const [token, setToken] = useState<string | null>(null);
   const [pressing, setPressing] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => { setToken(localStorage.getItem(`swap:token:${username}`)); }, [username]);
   const isOwner = !!token;
@@ -48,24 +49,37 @@ export default function CollectionClient({
   };
 
   const queue = useRef<Promise<unknown>>(Promise.resolve());
-  function persist(sticker_id: string, count: number) {
+  function persist(sticker_id: string, count: number, prev: number) {
     if (!isOwner || !token) return;
     const body = JSON.stringify({ username, sticker_id, count });
     // serialize writes so the last value always wins (prevents the got/double race)
-    queue.current = queue.current.then(() =>
-      fetch("/api/holding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-owner-token": token },
-        body,
-      }).catch(() => {})
-    );
+    queue.current = queue.current.then(async () => {
+      try {
+        const res = await fetch("/api/holding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-owner-token": token },
+          body,
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || `save failed (${res.status})`);
+        }
+        setSaveError(null);
+      } catch (e: any) {
+        // Never lose a write silently: roll this tile back to its real value and
+        // tell the user, instead of letting the next tab quietly show empty.
+        setHoldings((h) => { const n = { ...h }; if (prev <= 0) delete n[sticker_id]; else n[sticker_id] = prev; return n; });
+        setSaveError(e?.message || "couldn't save");
+      }
+    });
   }
   function setCount(id: string, count: number, animate = false) {
     if (!isOwner) return;
     touched.current = true;
+    const prev = holdings[id] || 0;
     setHoldings((h) => { const n = { ...h }; if (count <= 0) delete n[id]; else n[id] = count; return n; });
     if (animate) { setPressing(id); setTimeout(() => setPressing((p) => (p === id ? null : p)), 320); }
-    persist(id, Math.max(0, count));
+    persist(id, Math.max(0, count), prev);
   }
   const toggle = (id: string) => { const c = holdings[id] || 0; c >= 1 ? setCount(id, 0) : setCount(id, 1, true); };
   const addSpare = (id: string) => setCount(id, (holdings[id] || 0) >= 1 ? (holdings[id] || 0) + 1 : 1, (holdings[id] || 0) < 1);
@@ -83,6 +97,11 @@ export default function CollectionClient({
   return (
     <>
       {!isOwner && <div className="err" style={{ padding: "10px 2px" }}>{t("col.readonly", { u: username })}</div>}
+      {saveError && (
+        <div className="err" style={{ padding: "10px 2px" }}>
+          ⚠ {saveError}. Open your personal edit link (Settings tab) on this device and try again.
+        </div>
+      )}
 
       <div className="controls">
         <div className="filters">

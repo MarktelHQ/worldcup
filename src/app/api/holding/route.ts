@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
-import { getProfile } from "@/lib/db";
+import { getProfileByToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -8,19 +8,18 @@ export const dynamic = "force-dynamic";
 // count 0 = need (delete row), 1 = got, 2+ = got + (count-1) spares
 export async function POST(req: Request) {
   const token = req.headers.get("x-owner-token") || "";
-  const { username, sticker_id, count } = await req.json().catch(() => ({}));
-  if (!username || !sticker_id || typeof count !== "number")
-    return NextResponse.json({ error: "username, sticker_id, count required" }, { status: 400 });
+  const { sticker_id, count } = await req.json().catch(() => ({}));
+  if (!sticker_id || typeof count !== "number")
+    return NextResponse.json({ error: "sticker_id, count required" }, { status: 400 });
+  if (!token) return NextResponse.json({ error: "not your list" }, { status: 403 });
 
-  // Resolve the profile the SAME way every read does (shared resolver),
-  // so a write and a subsequent read can never land on different rows.
-  const profile = await getProfile(username);
-  if (!profile) return NextResponse.json({ error: "no such collector" }, { status: 404 });
-  if (!token || token !== profile.owner_token)
-    return NextResponse.json({ error: "not your list" }, { status: 403 });
+  // Identify the owner by their token — unique to one profile — so the write
+  // ALWAYS lands on exactly the profile this person owns. No username ambiguity,
+  // no dependence on which duplicate row a username lookup happens to pick.
+  const profile = await getProfileByToken(token);
+  if (!profile) return NextResponse.json({ error: "not your list" }, { status: 403 });
 
   const db = supabaseAdmin();
-
   const c = Math.max(0, Math.floor(count));
   // delete-then-insert (not upsert): works without relying on a
   // (profile_id, sticker_id) unique constraint, and we surface DB errors

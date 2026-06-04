@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
-import { getProfile } from "@/lib/db";
+import { getProfileByToken } from "@/lib/db";
 
 async function decHolding(db: any, profileId: string, stickerId: string) {
   const { data } = await db.from("holdings").select("count").eq("profile_id", profileId).eq("sticker_id", stickerId).single();
@@ -21,11 +21,11 @@ async function reserve(db: any, profileId: string, stickerIds: string[], forId: 
 
 export async function POST(req: Request) {
   const token = req.headers.get("x-owner-token") || "";
-  const { request_id, action, username } = await req.json().catch(() => ({}));
-  if (!request_id || !action || !username) return NextResponse.json({ error: "request_id, action, username required" }, { status: 400 });
+  const { request_id, action } = await req.json().catch(() => ({}));
+  if (!request_id || !action) return NextResponse.json({ error: "request_id, action required" }, { status: 400 });
 
-  const me = await getProfile(username);
-  if (!me || token !== me.owner_token) return NextResponse.json({ error: "not authorised" }, { status: 403 });
+  const me = await getProfileByToken(token);
+  if (!me) return NextResponse.json({ error: "not authorised" }, { status: 403 });
 
   const db = supabaseAdmin();
   const { data: r } = await db.from("requests").select("*").eq("id", request_id).single();
