@@ -4,12 +4,16 @@ export type ProfileRow = { id: string; group_id: string; username: string; owner
 
 export async function getProfile(username: string): Promise<ProfileRow | null> {
   const db = supabaseAdmin();
+  // Username is the app's identity key, so it MUST resolve to exactly one row.
+  // order(created_at) makes the choice deterministic even if a stray duplicate
+  // ever slips through, so the write path and the read path can never disagree.
   const { data } = await db
     .from("profiles")
     .select("id, group_id, username, owner_token, updated_at")
     .eq("username", username)
+    .order("created_at", { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle();
   return (data as ProfileRow) ?? null;
 }
 

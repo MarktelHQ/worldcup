@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { getProfile } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +12,14 @@ export async function POST(req: Request) {
   if (!username || !sticker_id || typeof count !== "number")
     return NextResponse.json({ error: "username, sticker_id, count required" }, { status: 400 });
 
-  const db = supabaseAdmin();
-  const { data: profile } = await db
-    .from("profiles")
-    .select("id, owner_token")
-    .eq("username", username)
-    .limit(1)
-    .single();
+  // Resolve the profile the SAME way every read does (shared resolver),
+  // so a write and a subsequent read can never land on different rows.
+  const profile = await getProfile(username);
   if (!profile) return NextResponse.json({ error: "no such collector" }, { status: 404 });
   if (!token || token !== profile.owner_token)
     return NextResponse.json({ error: "not your list" }, { status: 403 });
+
+  const db = supabaseAdmin();
 
   const c = Math.max(0, Math.floor(count));
   // delete-then-insert (not upsert): works without relying on a

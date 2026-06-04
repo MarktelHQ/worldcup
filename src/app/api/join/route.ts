@@ -14,6 +14,19 @@ export async function POST(req: Request) {
   if (!group) return NextResponse.json({ error: "unknown invite code" }, { status: 404 });
 
   const owner_token = newOwnerToken();
+
+  // Username is the app's global identity key (URLs are /u/<username>, and every
+  // lookup keys on username alone). Reject a name already used in ANY group, so
+  // we never create two profiles that the rest of the app can't tell apart.
+  const { data: existing } = await db
+    .from("profiles")
+    .select("id")
+    .eq("username", clean)
+    .limit(1)
+    .maybeSingle();
+  if (existing)
+    return NextResponse.json({ error: "that username is already taken" }, { status: 409 });
+
   const { data, error } = await db
     .from("profiles")
     .insert({ group_id: group.id, username: clean, owner_token })
@@ -22,7 +35,7 @@ export async function POST(req: Request) {
 
   if (error) {
     if (String(error.message).includes("duplicate"))
-      return NextResponse.json({ error: "that username is taken in this group" }, { status: 409 });
+      return NextResponse.json({ error: "that username is already taken" }, { status: 409 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   // owner_token returned ONCE — the client stores it as the edit key
