@@ -17,7 +17,23 @@ export default function CollectionClient({
   const [pressing, setPressing] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => { setToken(localStorage.getItem(`swap:token:${username}`)); }, [username]);
+  // Acquire the owner token. It's either already saved in this device's
+  // localStorage (you signed up here) OR arriving in the URL hash of a personal
+  // edit link (/u/<name>#token=XXX). We must read the hash here ourselves: this
+  // child effect runs BEFORE the top-level Providers effect that also captures it,
+  // so relying on Providers loses the race on a fresh device and the link opens
+  // read-only. Persist it so later visits work without the link.
+  useEffect(() => {
+    let tok = localStorage.getItem(`swap:token:${username}`);
+    if (!tok && typeof window !== "undefined" && window.location.hash) {
+      const fromLink = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token");
+      if (fromLink) {
+        tok = fromLink;
+        try { localStorage.setItem(`swap:token:${username}`, fromLink); } catch {}
+      }
+    }
+    setToken(tok);
+  }, [username]);
   const isOwner = !!token;
 
   // Re-seed from the database every time this screen opens, so switching tabs
