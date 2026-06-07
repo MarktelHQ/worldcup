@@ -12,7 +12,7 @@ export default function MarketClient({ username }: { username: string }) {
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2000); };
 
   useEffect(() => {
-    const load = () => fetch(`/api/market/${username}`).then((r) => r.json()).then((d) => setMembers(d.members ?? [])).catch(() => setMembers([]));
+    const load = () => fetch(`/api/market/${username}`, { cache: "no-store" }).then((r) => r.json()).then((d) => setMembers(d.members ?? [])).catch(() => setMembers([]));
     load();
     window.addEventListener("focus", load);
     return () => window.removeEventListener("focus", load);
