@@ -171,3 +171,27 @@ nav.tabs a .badge{position:absolute;top:5px;right:8px;background:var(--vermilion
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);font-family:"Martian Mono",monospace;font-size:12px;padding:10px 16px;border:2px solid var(--ink);box-shadow:var(--shadow);z-index:9500;}
 @media print{nav.tabs,.controls,.stamps,.copybar,.lfoot,.tg-foot{display:none!important;}body::before{display:none;}}
+
+/* ===== Market: tap-to-select trade chips ===== */
+.chip.pick{cursor:pointer;user-select:none}
+.chip.pick.offc{opacity:.32;text-decoration:line-through;filter:grayscale(1)}
+.pickhint{font-size:11px;letter-spacing:.04em;opacity:.65;padding:4px 14px 0}
+.selall{margin-left:8px;font-weight:400;text-transform:none;letter-spacing:0}
+.selall a{cursor:pointer;text-decoration:underline;opacity:.7}
+.selall a:hover{opacity:1}
+
+/* ===== Print-only offline swap sheet ===== */
+.printsheet{display:none}
+@media print{
+  /* hide the on-screen app shell; print only the dense sheet */
+  nav.tabs,.controls,.stamps,.copybar,.lfoot,.tg-foot,.cols,.sheet-sub,.ticker,header{display:none!important}
+  body::before{display:none}
+  .printsheet{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;color:#000}
+  .ps-head{font-size:11px;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px}
+  .ps-sec h4{font-size:11px;margin:8px 0 4px;border-bottom:1px solid #000;padding-bottom:2px}
+  .ps-grid{column-count:6;column-gap:10px}
+  .ps-item{display:block;font-size:8.5pt;line-height:1.5;break-inside:avoid;white-space:nowrap}
+  .ps-item.ps-spare{font-weight:700}
+  .ps-foot{margin-top:8px;font-size:8pt;border-top:1px solid #000;padding-top:3px}
+  @page{margin:10mm}
+}

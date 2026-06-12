@@ -8,6 +8,7 @@ export default function TradeClient({ username, allIds }: { username: string; al
   const [toast, setToast] = useState<string | null>(null);
   const [spares, setSpares] = useState<string[]>([]);
   const [needs, setNeeds] = useState<string[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   useEffect(() => setOrigin(window.location.origin), []);
   // Pull fresh holdings when the screen opens — never trust a cached render.
   useEffect(() => {
@@ -18,6 +19,7 @@ export default function TradeClient({ username, allIds }: { username: string; al
         if (!alive || !d || !d.holdings) return;
         const h = d.holdings as Record<string, number>;
         const held = new Set(Object.keys(h));
+        setCounts(h);
         setSpares(Object.entries(h).filter(([, c]) => c >= 2).map(([id]) => id).sort());
         setNeeds(allIds.filter((id) => !held.has(id)).sort());
       })
@@ -59,6 +61,27 @@ export default function TradeClient({ username, allIds }: { username: string; al
           {needs.length > 0 && <span className="copybar" onClick={() => copy(needs.join(", "), t("trade.copied"))}>⧉ {t("trade.copyNeeds")}</span>}
         </div>
       </div>
+      {/* ===== PRINT-ONLY OFFLINE SHEET (full lists, dense, checkboxes) ===== */}
+      <div className="printsheet">
+        <div className="ps-head">
+          <strong>@{username}</strong> · {t("trade.psDate")}: {new Date().toLocaleDateString()} ·{" "}
+          {allIds.length - needs.length}/{allIds.length} · {t("trade.gotSpares")}: {spares.length} · {t("trade.stillNeed")}: {needs.length}
+        </div>
+        <div className="ps-sec">
+          <h4>☐ {t("trade.stillNeed")} ({needs.length}) — {t("trade.psTick")}</h4>
+          <div className="ps-grid">
+            {needs.map((c) => <span key={c} className="ps-item">☐ {c}</span>)}
+          </div>
+        </div>
+        <div className="ps-sec">
+          <h4>★ {t("trade.gotSpares")} ({spares.length}) — {t("trade.psGive")}</h4>
+          <div className="ps-grid">
+            {spares.map((c) => <span key={c} className="ps-item ps-spare">{c}{(counts[c] ?? 2) > 2 ? ` ×${(counts[c] ?? 2) - 1}` : ""}</span>)}
+          </div>
+        </div>
+        <div className="ps-foot">{link}</div>
+      </div>
+
       {toast && <div className="toast show">{toast}</div>}
     </>
   );
