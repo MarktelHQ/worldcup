@@ -195,3 +195,9 @@ nav.tabs a .badge{position:absolute;top:5px;right:8px;background:var(--vermilion
   .ps-foot{margin-top:8px;font-size:8pt;border-top:1px solid #000;padding-top:3px}
   @page{margin:10mm}
 }
+
+/* ===== Market selection: explicit ✓/✕ state, not just dimming ===== */
+.chip.pick::before{content:"✓ ";font-weight:700}
+.chip.pick.offc::before{content:"✕ "}
+.chip.pick{border-style:solid}
+.chip.pick.offc{border-style:dashed}

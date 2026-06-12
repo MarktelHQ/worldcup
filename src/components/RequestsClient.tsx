@@ -19,7 +19,7 @@ export default function RequestsClient({ username }: { username: string }) {
   }, [username]);
   useEffect(load, [load]);
 
-  async function respond(id: string, action: "accept" | "decline" | "done", okMsg: string) {
+  async function respond(id: string, action: "accept" | "decline" | "done" | "cancel", okMsg: string) {
     const token = localStorage.getItem(`swap:token:${username}`);
     if (!token) return flash(t("set.notOwner"));
     await fetch("/api/request/respond", {
@@ -54,7 +54,10 @@ export default function RequestsClient({ username }: { username: string }) {
               <button className="btn sm mint" onClick={() => respond(r.id, "accept", t("req.accepted"))}>{t("req.accept")}</button>
               <button className="btn sm ghost" onClick={() => respond(r.id, "decline", t("req.declined"))}>{t("req.decline")}</button>
             </>}
-            {r.status === "accepted" && <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>}
+            {r.status === "accepted" && <>
+              <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>
+              <button className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
+            </>}
           </div>
         </div>
       ))}
@@ -68,7 +71,12 @@ export default function RequestsClient({ username }: { username: string }) {
               <span className="lbl" style={{ marginLeft: 8 }}>{t("req.youGet")}</span>{r.wanted.map((c) => <span key={c} className="chip">{c}</span>)}
             </div>
           </div>
-          {r.status === "accepted" && <div className="tg-foot"><button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button></div>}
+          {(r.status === "open" || r.status === "accepted") && (
+            <div className="tg-foot">
+              {r.status === "accepted" && <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>}
+              <button className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
+            </div>
+          )}
         </div>
       ))}
       {toast && <div className="toast show">{toast}</div>}
