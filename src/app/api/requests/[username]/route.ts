@@ -15,9 +15,13 @@ export async function GET(_req: Request, { params }: { params: { username: strin
     .or(`from_profile.eq.${me.id},to_profile.eq.${me.id}`)
     .order("created_at", { ascending: false });
 
-  const incoming = (reqs ?? []).filter((r) => r.to_profile === me.id)
+  // Cancelled requests stay in the DB but are hidden from the inbox — no need to
+  // clutter the list with cancellations.
+  const visible = (reqs ?? []).filter((r) => r.status !== "cancelled");
+
+  const incoming = visible.filter((r) => r.to_profile === me.id)
     .map((r) => ({ ...r, with: nameOf.get(r.from_profile), direction: "in" }));
-  const outgoing = (reqs ?? []).filter((r) => r.from_profile === me.id)
+  const outgoing = visible.filter((r) => r.from_profile === me.id)
     .map((r) => ({ ...r, with: nameOf.get(r.to_profile), direction: "out" }));
 
   return NextResponse.json({ incoming, outgoing, openIncoming: incoming.filter((r) => r.status === "open").length });
