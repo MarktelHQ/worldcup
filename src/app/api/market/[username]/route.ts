@@ -6,6 +6,16 @@ export const dynamic = "force-dynamic";
 
 type Row = { profile_id: string; sticker_id: string; count: number; reserved_for: string | null };
 
+function parseId(id: string): [string, number] {
+  const m = id.match(/^([A-Za-z]+)(\d+)$/);
+  return m ? [m[1], parseInt(m[2], 10)] : [id, 0];
+}
+function natSort(a: string, b: string) {
+  const [pa, na] = parseId(a);
+  const [pb, nb] = parseId(b);
+  return pa === pb ? na - nb : pa < pb ? -1 : 1;
+}
+
 export async function GET(_req: Request, { params }: { params: { username: string } }) {
   const me = await getProfile(params.username);
   if (!me) return NextResponse.json({ error: "no such collector" }, { status: 404 });
@@ -14,6 +24,16 @@ export async function GET(_req: Request, { params }: { params: { username: strin
   const { data: members } = await db
     .from("profiles").select("id, username, updated_at").eq("group_id", me.group_id);
   const ids = (members ?? []).map((m) => m.id);
+
+  // Full sticker catalogue (paged for safety), so we can compute each member's
+  // complete "still needs" list — what they don't own at all.
+  const allIds: string[] = [];
+  for (let from = 0; from < 100000; from += 1000) {
+    const { data, error } = await db.from("stickers").select("id").range(from, from + 999);
+    if (error || !data) break;
+    allIds.push(...data.map((s: { id: string }) => s.id));
+    if (data.length < 1000) break;
+  }
 
   // Fetch ALL holdings for the group, PAGED. Supabase caps a single select at
   // ~1000 rows; a group's combined holdings easily exceed that (one collector can
@@ -49,9 +69,10 @@ export async function GET(_req: Request, { params }: { params: { username: strin
     .map((m) => {
       const theirHeld = held.get(m.id)!;
       const theirSpares = spares.get(m.id)!;
-      const youGive = [...mySpares].filter((s) => !theirHeld.has(s)).sort();
-      const theyGive = [...theirSpares].filter((s) => !myHeld.has(s)).sort();
-      return { username: m.username, updated_at: m.updated_at, youGive, theyGive, mutual: Math.min(youGive.length, theyGive.length) };
+      const youGive = [...mySpares].filter((s) => !theirHeld.has(s)).sort(natSort);
+      const theyGive = [...theirSpares].filter((s) => !myHeld.has(s)).sort(natSort);
+      const needs = allIds.filter((s) => !theirHeld.has(s)).sort(natSort); // their full want-list
+      return { username: m.username, updated_at: m.updated_at, youGive, theyGive, needs, mutual: Math.min(youGive.length, theyGive.length) };
     })
     .sort((a, b) => b.mutual - a.mutual || b.theyGive.length - a.theyGive.length);
 

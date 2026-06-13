@@ -2,17 +2,19 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/components/Providers";
 
-type Member = { username: string; updated_at: string; youGive: string[]; theyGive: string[]; mutual: number };
+type Member = { username: string; updated_at: string; youGive: string[]; theyGive: string[]; needs: string[]; mutual: number };
 
 export default function MarketClient({ username }: { username: string }) {
   const { t } = useI18n();
   const [members, setMembers] = useState<Member[] | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [sent, setSent] = useState<Record<string, boolean>>({});
+  const [showNeeds, setShowNeeds] = useState<Record<string, boolean>>({});
   // Per member, which sticker ids are EXCLUDED from the trade (default: none —
   // everything starts selected, tap a chip to leave it out).
   const [off, setOff] = useState<Record<string, Set<string>>>({});
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2000); };
+  const copy = (text: string, msg: string) => navigator.clipboard?.writeText(text).then(() => flash(msg)).catch(() => {});
 
   useEffect(() => {
     const load = () => fetch(`/api/market/${username}`, { cache: "no-store" }).then((r) => r.json()).then((d) => setMembers(d.members ?? [])).catch(() => setMembers([]));
@@ -116,6 +118,23 @@ export default function MarketClient({ username }: { username: string }) {
                 {sent[m.username] ? "✓" : `${t("market.request")} (${give.length}↔${get.length})`}
               </button>
             </div>
+            {m.needs.length > 0 && (
+              <div className="watch">
+                <div className="watch-h" onClick={() => setShowNeeds((s) => ({ ...s, [m.username]: !s[m.username] }))}>
+                  <span>👀 {t("market.stillNeeds", { who: "@" + m.username, n: m.needs.length })}</span>
+                  <span className="watch-tog">{showNeeds[m.username] ? "−" : "+"}</span>
+                </div>
+                {showNeeds[m.username] && (
+                  <>
+                    <div className="watch-sub">{t("market.watchHint")}</div>
+                    <div className="chips watch-chips">
+                      {m.needs.map((c) => <span key={c} className="chip ghostc">{c}</span>)}
+                    </div>
+                    <span className="copybar" onClick={() => copy(m.needs.join(", "), t("trade.copied"))}>⧉ {t("market.copyNeeds")}</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
