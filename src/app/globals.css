@@ -189,8 +189,10 @@ nav.tabs a .badge{position:absolute;top:5px;right:8px;background:var(--vermilion
   .printsheet{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;color:#000}
   .ps-head{font-size:11px;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px}
   .ps-sec h4{font-size:11px;margin:8px 0 4px;border-bottom:1px solid #000;padding-bottom:2px}
-  .ps-grid{column-count:6;column-gap:10px}
-  .ps-item{display:block;font-size:8.5pt;line-height:1.5;break-inside:avoid;white-space:nowrap}
+  .ps-grid{column-count:5;column-gap:8px}
+  .ps-ctry{break-inside:avoid;border-bottom:.75pt solid #999;padding:1px 0 3px;margin-bottom:3px}
+  .ps-lbl{display:block;font-weight:700;font-size:8pt;letter-spacing:.05em;margin-bottom:1px}
+  .ps-item{display:inline-block;font-size:8.5pt;line-height:1.55;margin-right:7px;white-space:nowrap}
   .ps-item.ps-spare{font-weight:700}
   .ps-foot{margin-top:8px;font-size:8pt;border-top:1px solid #000;padding-top:3px}
   @page{margin:10mm}

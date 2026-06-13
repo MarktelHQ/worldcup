@@ -2,6 +2,28 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/components/Providers";
 
+// "ALG11" -> ["ALG", 11]; sort by country, then by number (so ALG2 < ALG11).
+function parseId(id: string): [string, number] {
+  const m = id.match(/^([A-Za-z]+)(\d+)$/);
+  return m ? [m[1], parseInt(m[2], 10)] : [id, 0];
+}
+function natSort(a: string, b: string) {
+  const [pa, na] = parseId(a);
+  const [pb, nb] = parseId(b);
+  return pa === pb ? na - nb : pa < pb ? -1 : 1;
+}
+// Assumes ids are already natSorted, so same-country ids are consecutive.
+function groupByCountry(ids: string[]): { prefix: string; items: string[] }[] {
+  const out: { prefix: string; items: string[] }[] = [];
+  for (const id of ids) {
+    const [p] = parseId(id);
+    const last = out[out.length - 1];
+    if (last && last.prefix === p) last.items.push(id);
+    else out.push({ prefix: p, items: [id] });
+  }
+  return out;
+}
+
 export default function TradeClient({ username, allIds }: { username: string; allIds: string[] }) {
   const { t } = useI18n();
   const [origin, setOrigin] = useState("");
@@ -20,8 +42,8 @@ export default function TradeClient({ username, allIds }: { username: string; al
         const h = d.holdings as Record<string, number>;
         const held = new Set(Object.keys(h));
         setCounts(h);
-        setSpares(Object.entries(h).filter(([, c]) => c >= 2).map(([id]) => id).sort());
-        setNeeds(allIds.filter((id) => !held.has(id)).sort());
+        setSpares(Object.entries(h).filter(([, c]) => c >= 2).map(([id]) => id).sort(natSort));
+        setNeeds(allIds.filter((id) => !held.has(id)).sort(natSort));
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -70,13 +92,23 @@ export default function TradeClient({ username, allIds }: { username: string; al
         <div className="ps-sec">
           <h4>☐ {t("trade.stillNeed")} ({needs.length}) — {t("trade.psTick")}</h4>
           <div className="ps-grid">
-            {needs.map((c) => <span key={c} className="ps-item">☐ {c}</span>)}
+            {groupByCountry(needs).map((g) => (
+              <div className="ps-ctry" key={g.prefix}>
+                <span className="ps-lbl">{g.prefix}</span>
+                {g.items.map((c) => <span key={c} className="ps-item">☐ {c}</span>)}
+              </div>
+            ))}
           </div>
         </div>
         <div className="ps-sec">
           <h4>★ {t("trade.gotSpares")} ({spares.length}) — {t("trade.psGive")}</h4>
           <div className="ps-grid">
-            {spares.map((c) => <span key={c} className="ps-item ps-spare">{c}{(counts[c] ?? 2) > 2 ? ` ×${(counts[c] ?? 2) - 1}` : ""}</span>)}
+            {groupByCountry(spares).map((g) => (
+              <div className="ps-ctry" key={g.prefix}>
+                <span className="ps-lbl">{g.prefix}</span>
+                {g.items.map((c) => <span key={c} className="ps-item ps-spare">{c}{(counts[c] ?? 2) > 2 ? ` ×${(counts[c] ?? 2) - 1}` : ""}</span>)}
+              </div>
+            ))}
           </div>
         </div>
         <div className="ps-foot">{link}</div>
