@@ -3,11 +3,15 @@ import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getProfileByToken } from "@/lib/db";
 
 async function decHolding(db: any, profileId: string, stickerId: string) {
-  const { data } = await db.from("holdings").select("count").eq("profile_id", profileId).eq("sticker_id", stickerId).single();
+  const { data } = await db.from("holdings").select("count").eq("profile_id", profileId).eq("sticker_id", stickerId).maybeSingle();
   if (!data) return;
-  const next = data.count - 1;
-  if (next < 1) await db.from("holdings").delete().eq("profile_id", profileId).eq("sticker_id", stickerId);
-  else await db.from("holdings").update({ count: next, reserved_for: null }).eq("profile_id", profileId).eq("sticker_id", stickerId);
+  // A swap only ever gives away a SPARE. Never let it punch a hole in the album:
+  // if there's only one copy, keep it and just release any reservation.
+  if (data.count <= 1) {
+    await db.from("holdings").update({ reserved_for: null }).eq("profile_id", profileId).eq("sticker_id", stickerId);
+    return;
+  }
+  await db.from("holdings").update({ count: data.count - 1, reserved_for: null }).eq("profile_id", profileId).eq("sticker_id", stickerId);
 }
 async function ensureGot(db: any, profileId: string, stickerId: string) {
   const { data } = await db.from("holdings").select("count").eq("profile_id", profileId).eq("sticker_id", stickerId).single();
@@ -40,6 +44,7 @@ export async function POST(req: Request) {
 
   if (action === "accept") {
     if (!isRecipient) return NextResponse.json({ error: "only the recipient can accept" }, { status: 403 });
+    if (r.status !== "open") return NextResponse.json({ ok: true, status: r.status }); // idempotent: already handled
     await reserve(db, r.from_profile, r.offered, r.to_profile); // sender's offered doubles reserved for recipient
     await reserve(db, r.to_profile, r.wanted, r.from_profile);  // recipient's wanted doubles reserved for sender
     await db.from("requests").update({ status: "accepted" }).eq("id", r.id);
@@ -47,11 +52,16 @@ export async function POST(req: Request) {
   }
   if (action === "decline") {
     if (!isRecipient) return NextResponse.json({ error: "only the recipient can decline" }, { status: 403 });
+    if (r.status !== "open") return NextResponse.json({ ok: true, status: r.status });
     await db.from("requests").update({ status: "declined" }).eq("id", r.id);
     return NextResponse.json({ ok: true, status: "declined" });
   }
   if (action === "done") {
     if (!isRecipient && !isSender) return NextResponse.json({ error: "not your swap" }, { status: 403 });
+    // CRITICAL: only transfer when currently accepted. This makes "done" idempotent —
+    // if both parties (or a double-tap) mark it done, the second call is a no-op
+    // instead of moving the stickers a second time and deleting them.
+    if (r.status !== "accepted") return NextResponse.json({ ok: true, status: r.status });
     // sender gives offered -> recipient; recipient gives wanted -> sender
     for (const s of r.offered) { await decHolding(db, r.from_profile, s); await ensureGot(db, r.to_profile, s); }
     for (const s of r.wanted) { await decHolding(db, r.to_profile, s); await ensureGot(db, r.from_profile, s); }

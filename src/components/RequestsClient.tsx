@@ -19,14 +19,19 @@ export default function RequestsClient({ username }: { username: string }) {
   }, [username]);
   useEffect(load, [load]);
 
+  const [busy, setBusy] = useState<string | null>(null);
   async function respond(id: string, action: "accept" | "decline" | "done" | "cancel", okMsg: string) {
+    if (busy) return; // block rapid double-taps that could double-process a swap
     const token = localStorage.getItem(`swap:token:${username}`);
     if (!token) return flash(t("set.notOwner"));
-    await fetch("/api/request/respond", {
+    setBusy(id);
+    const res = await fetch("/api/request/respond", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-owner-token": token },
       body: JSON.stringify({ request_id: id, action, username }),
-    });
+    }).catch(() => null);
+    setBusy(null);
+    if (!res || !res.ok) { flash(t("req.failed")); load(); return; }
     flash(okMsg); load();
   }
   const statusLabel = (s: string) => t(`req.status${s.charAt(0).toUpperCase() + s.slice(1)}`);
@@ -51,12 +56,12 @@ export default function RequestsClient({ username }: { username: string }) {
           </div>
           <div className="tg-foot">
             {r.status === "open" && <>
-              <button className="btn sm mint" onClick={() => respond(r.id, "accept", t("req.accepted"))}>{t("req.accept")}</button>
-              <button className="btn sm ghost" onClick={() => respond(r.id, "decline", t("req.declined"))}>{t("req.decline")}</button>
+              <button disabled={busy===r.id} className="btn sm mint" onClick={() => respond(r.id, "accept", t("req.accepted"))}>{t("req.accept")}</button>
+              <button disabled={busy===r.id} className="btn sm ghost" onClick={() => respond(r.id, "decline", t("req.declined"))}>{t("req.decline")}</button>
             </>}
             {r.status === "accepted" && <>
-              <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>
-              <button className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
+              <button disabled={busy===r.id} className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>
+              <button disabled={busy===r.id} className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
             </>}
           </div>
         </div>
@@ -73,8 +78,8 @@ export default function RequestsClient({ username }: { username: string }) {
           </div>
           {(r.status === "open" || r.status === "accepted") && (
             <div className="tg-foot">
-              {r.status === "accepted" && <button className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>}
-              <button className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
+              {r.status === "accepted" && <button disabled={busy===r.id} className="btn sm" onClick={() => respond(r.id, "done", t("req.swapped"))}>{t("req.markDone")}</button>}
+              <button disabled={busy===r.id} className="btn sm ghost" onClick={() => respond(r.id, "cancel", t("req.cancelled"))}>{t("req.cancel")}</button>
             </div>
           )}
         </div>
