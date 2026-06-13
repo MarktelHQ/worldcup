@@ -67,18 +67,25 @@ export default function TradeClient({ username, allIds }: { username: string; al
       <div className="cols">
         <div className="col">
           <h3 className="hot">{t("trade.gotSpares")} <span className="ct">×{spares.length}</span></h3>
-          <div className="chips">
-            {spares.length ? spares.map((c) => <span key={c} className="chip hot">{c}</span>) : <span className="muted">{t("trade.noSpares")}</span>}
+          <div className="grouped">
+            {spares.length ? groupByCountry(spares).map((g) => (
+              <div className="grp" key={g.prefix}>
+                <span className="grp-lbl">{g.prefix}</span>
+                <div className="grp-chips">{g.items.map((c) => <span key={c} className="chip hot">{c}{(counts[c] ?? 2) > 2 ? <em className="mult">×{(counts[c] ?? 2) - 1}</em> : null}</span>)}</div>
+              </div>
+            )) : <span className="muted">{t("trade.noSpares")}</span>}
           </div>
           {spares.length > 0 && <span className="copybar" onClick={() => copy(spares.join(", "), t("trade.copied"))}>⧉ {t("trade.copySpares")}</span>}
         </div>
         <div className="col">
           <h3>{t("trade.stillNeed")} <span className="ct">×{needs.length}</span></h3>
-          <div className="chips">
-            {needs.length ? <>
-              {needs.slice(0, 60).map((c) => <span key={c} className="chip">{c}</span>)}
-              {needs.length > 60 && <span className="chip">+ {needs.length - 60}…</span>}
-            </> : <span className="muted">{t("trade.noNeeds")}</span>}
+          <div className="grouped">
+            {needs.length ? groupByCountry(needs).map((g) => (
+              <div className="grp" key={g.prefix}>
+                <span className="grp-lbl">{g.prefix}</span>
+                <div className="grp-chips">{g.items.map((c) => <span key={c} className="chip">{c}</span>)}</div>
+              </div>
+            )) : <span className="muted">{t("trade.noNeeds")}</span>}
           </div>
           {needs.length > 0 && <span className="copybar" onClick={() => copy(needs.join(", "), t("trade.copied"))}>⧉ {t("trade.copyNeeds")}</span>}
         </div>

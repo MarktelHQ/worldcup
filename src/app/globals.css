@@ -212,3 +212,14 @@ nav.tabs a .badge{position:absolute;top:5px;right:8px;background:var(--vermilion
 .watch-sub{font-size:11px;opacity:.65;padding:0 14px 6px}
 .watch-chips{padding:0 14px 6px;max-height:240px;overflow:auto}
 .chip.ghostc{background:transparent;border:1px solid rgba(0,0,0,.25);color:inherit;opacity:.8}
+
+/* ===== Trade sheet: full country-grouped lists (screen) ===== */
+.grouped{display:flex;flex-direction:column}
+.grp{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.12)}
+.grp:last-child{border-bottom:none}
+.grp-lbl{flex:0 0 44px;text-align:right;font-weight:800;font-size:12px;letter-spacing:.04em;opacity:.6;padding-top:4px}
+.grp-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto;min-width:0}
+.chip .mult{font-style:normal;font-size:10px;opacity:.85;margin-left:3px}
+@media (max-width:560px){
+  .grp-lbl{flex-basis:36px;font-size:11px}
+}
